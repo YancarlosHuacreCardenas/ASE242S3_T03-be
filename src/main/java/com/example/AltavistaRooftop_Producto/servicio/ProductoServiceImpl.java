@@ -23,7 +23,7 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     public Optional<Producto> listarPorId(Long id) {
-        return productoRepository.findById(id.intValue());
+        return productoRepository.findById(id);
     }
 
     @Override
@@ -38,7 +38,7 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     public Producto editar(Long id, Producto producto) {
-        Producto existente = productoRepository.findById(id.intValue())
+        Producto existente = productoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + id));
 
         existente.setNombre(producto.getNombre());
@@ -53,7 +53,7 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     public void eliminarLogico(Long id) {
-        Producto producto = productoRepository.findById(id.intValue())
+        Producto producto = productoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + id));
         producto.setDisponible(false);
         productoRepository.save(producto);
@@ -61,7 +61,7 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     public void restaurarLogico(Long id) {
-        Producto producto = productoRepository.findById(id.intValue())
+        Producto producto = productoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + id));
         producto.setDisponible(true);
         productoRepository.save(producto);

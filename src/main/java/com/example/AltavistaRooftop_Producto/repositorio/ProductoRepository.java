@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ProductoRepository extends JpaRepository<Producto, Integer> {
+public interface ProductoRepository extends JpaRepository<Producto, Long> {
     List<Producto> findByDisponible(Boolean disponible);
 }

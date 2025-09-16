@@ -1,0 +1,29 @@
+# Archivo: docker-compose.yml
+version: '3.8'
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mssql_db
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Yancarlos1 # Asegúrate de que esta contraseña coincida con tu .properties
+    volumes:
+      - mssql_data:/var/opt/mssql
+
+  backend:
+    build: .
+    container_name: spring_backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      - spring.datasource.url=jdbc:sqlserver://db:1433;databaseName=AltavistaRooftop;encrypt=true;trustServerCertificate=true
+      - spring.datasource.username=sa
+      - spring.datasource.password=Yancarlos1 # Asegúrate de que esta contraseña coincida con la de 'db'
+      
+volumes:
+  mssql_data:

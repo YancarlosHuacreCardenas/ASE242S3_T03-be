@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Productos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Importa una fuente de Google Fonts para un mejor diseño */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Un gris claro para el fondo */
+        }
+        
+        /* Estilos para el modal (ventana emergente) */
+        .modal-overlay {
+            display: none; /* Se oculta por defecto */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.3s ease-out; /* Animación para que aparezca suavemente */
+        }
+        
+        /* Animación de entrada para el modal */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-6 sm:p-8">
+        <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-800 mb-8">
+            Gestión de Productos
+        </h1>
+
+        <form id="product-form" class="bg-gray-50 p-6 rounded-lg shadow-inner mb-8 transition-all duration-300">
+            <input type="hidden" id="product-id">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4" id="form-title">Agregar Nuevo Producto</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre</label>
+                    <input type="text" id="nombre" name="nombre" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out px-3 py-2" required>
+                </div>
+                <div>
+                    <label for="categoria" class="block text-sm font-medium text-gray-700">Categoría</label>
+                    <input type="text" id="categoria" name="categoria" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out px-3 py-2" required>
+                </div>
+                <div>
+                    <label for="precio" class="block text-sm font-medium text-gray-700">Precio</label>
+                    <input type="number" id="precio" name="precio" step="0.01" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out px-3 py-2" required>
+                </div>
+                <div>
+                    <!-- CAMBIO: Campo de URL de imagen restaurado -->
+                    <label for="imagenUrl" class="block text-sm font-medium text-gray-700">URL de la Imagen</label>
+                    <input type="url" id="imagenUrl" name="imagenUrl" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out px-3 py-2">
+                    <p class="text-xs text-gray-500 mt-1">
+                        Nota: Debes usar una URL de imagen directa (que termine en .jpg, .png, etc.), no una URL de redirección como las de Google.
+                    </p>
+                </div>
+                <div class="md:col-span-2">
+                    <label for="descripcion" class="block text-sm font-medium text-gray-700">Descripción</label>
+                    <textarea id="descripcion" name="descripcion" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out px-3 py-2" required></textarea>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                <button type="submit" class="flex-1 bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                    Guardar Producto
+                </button>
+                <button type="button" id="cancel-btn" class="flex-1 bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition duration-150 ease-in-out">
+                    Cancelar
+                </button>
+            </div>
+            
+            <!-- Previsualización de la imagen -->
+            <div id="image-preview" class="mt-4 hidden md:col-span-2">
+                <p class="text-sm font-medium text-gray-700">Previsualización de la imagen:</p>
+                <img id="preview-img" src="" alt="Vista previa de la imagen" class="mt-2 w-48 h-auto rounded-md shadow">
+            </div>
+        </form>
+
+        <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mb-8">
+            <button id="show-available" class="bg-green-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-green-600 transition duration-150 ease-in-out">
+                Mostrar Disponibles
+            </button>
+            <button id="show-all" class="bg-blue-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-600 transition duration-150 ease-in-out">
+                Mostrar Todos
+            </button>
+            <button id="show-unavailable" class="bg-yellow-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-yellow-600 transition duration-150 ease-in-out">
+                Mostrar No Disponibles
+            </button>
+        </div>
+
+        <div id="product-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            </div>
+
+        <div id="message-modal" class="modal-overlay">
+            <div class="modal-content">
+                <p id="modal-message" class="text-center text-lg font-medium"></p>
+                <div class="mt-4 flex justify-center">
+                    <button id="modal-ok-btn" class="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none transition duration-150 ease-in-out">
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Lógica de la aplicación con JavaScript
+        document.addEventListener('DOMContentLoaded', () => {
+            // URL de tu API de productos
+            const API_URL = 'http://localhost:8080/api/productos';
+
+            // Seleccionamos los elementos del DOM
+            const form = document.getElementById('product-form');
+            const formTitle = document.getElementById('form-title');
+            const productIdInput = document.getElementById('product-id');
+            const productList = document.getElementById('product-list');
+            const cancelBtn = document.getElementById('cancel-btn');
+            const showAvailableBtn = document.getElementById('show-available');
+            const showAllBtn = document.getElementById('show-all');
+            const showUnavailableBtn = document.getElementById('show-unavailable');
+            const messageModal = document.getElementById('message-modal');
+            const modalMessage = document.getElementById('modal-message');
+            const modalOkBtn = document.getElementById('modal-ok-btn');
+            const imagenUrlInput = document.getElementById('imagenUrl');
+            const imagePreviewContainer = document.getElementById('image-preview');
+            const previewImg = document.getElementById('preview-img');
+
+            let currentFilter = 'all';
+
+            // Función para mostrar el modal con un mensaje
+            function showMessageModal(message, isError = false) {
+                modalMessage.textContent = message;
+                modalMessage.className = `text-center text-lg font-medium ${isError ? 'text-red-600' : 'text-green-600'}`;
+                messageModal.style.display = 'flex';
+            }
+
+            // Función para ocultar el modal
+            function hideMessageModal() {
+                messageModal.style.display = 'none';
+            }
+            
+            // Función para obtener los productos de la API y renderizarlos
+            async function fetchProducts() {
+                try {
+                    let url = API_URL;
+                    if (currentFilter === 'available') {
+                        url = `${API_URL}/estado/true`;
+                    } else if (currentFilter === 'unavailable') {
+                        url = `${API_URL}/estado/false`;
+                    }
+
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`Error en la solicitud: ${response.statusText}`);
+                    }
+                    const products = await response.json();
+                    renderProducts(products);
+                } catch (error) {
+                    showMessageModal(`Error al cargar los productos: ${error.message}`, true);
+                    console.error('Error fetching products:', error);
+                }
+            }
+
+            // Función para renderizar los productos en la interfaz
+            function renderProducts(products) {
+                productList.innerHTML = '';
+                if (products.length === 0) {
+                    productList.innerHTML = '<p class="text-center text-gray-500 col-span-full">No se encontraron productos.</p>';
+                    return;
+                }
+                products.forEach(product => {
+                    const productCard = document.createElement('div');
+                    productCard.className = `bg-gray-100 rounded-lg shadow-sm p-4 transition-all duration-200 hover:shadow-lg ${!product.disponible ? 'opacity-50 line-through' : ''}`;
+                    
+                    productCard.innerHTML = `
+                        <img src="${product.imagenUrl}" alt="${product.nombre}" class="w-full h-40 object-cover rounded-md mb-4" onerror="this.src='https://placehold.co/400x200?text=No+Image';">
+                        <h3 class="text-lg font-bold text-gray-900 truncate">${product.nombre}</h3>
+                        <p class="text-sm text-gray-600">${product.descripcion}</p>
+                        <p class="text-md font-semibold text-gray-800 mt-2">Precio: $${product.precio.toFixed(2)}</p>
+                        <p class="text-xs text-gray-500 mt-1">Categoría: ${product.categoria}</p>
+                        <p class="text-xs font-medium mt-2 ${product.disponible ? 'text-green-600' : 'text-red-600'}">
+                            Estado: ${product.disponible ? 'Disponible' : 'No Disponible'}
+                        </p>
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <button class="edit-btn bg-blue-500 text-white text-xs px-3 py-1 rounded-full hover:bg-blue-600 transition" data-id="${product.id}">Editar</button>
+                            ${product.disponible ? 
+                                `<button class="delete-btn bg-red-500 text-white text-xs px-3 py-1 rounded-full hover:bg-red-600 transition" data-id="${product.id}">Eliminar</button>` :
+                                `<button class="restore-btn bg-yellow-500 text-white text-xs px-3 py-1 rounded-full hover:bg-yellow-600 transition" data-id="${product.id}">Restaurar</button>`
+                            }
+                        </div>
+                    `;
+                    productList.appendChild(productCard);
+                });
+            }
+
+            // Maneja el envío del formulario
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = productIdInput.value;
+                const isEditing = !!id;
+                const imagenUrl = imagenUrlInput.value;
+
+                // Se ha eliminado la validación de la URL de la imagen Base64
+                // Ahora acepta cualquier URL.
+
+                const product = {
+                    nombre: document.getElementById('nombre').value,
+                    descripcion: document.getElementById('descripcion').value,
+                    precio: parseFloat(document.getElementById('precio').value),
+                    categoria: document.getElementById('categoria').value,
+                    imagenUrl: imagenUrl,
+                    disponible: true,
+                    estado: true 
+                };
+
+                try {
+                    const response = await fetch(isEditing ? `${API_URL}/${id}` : API_URL, {
+                        method: isEditing ? 'PUT' : 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(product)
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Error al guardar el producto: ${response.statusText}`);
+                    }
+                    showMessageModal(`Producto ${isEditing ? 'actualizado' : 'creado'} con éxito.`);
+                    resetForm();
+                    fetchProducts();
+                } catch (error) {
+                    showMessageModal(`Error: ${error.message}`, true);
+                    console.error('Error saving product:', error);
+                }
+            });
+
+            // Maneja las acciones de editar, eliminar y restaurar
+            productList.addEventListener('click', async (e) => {
+                const target = e.target;
+                const id = target.dataset.id;
+                
+                if (!id) return;
+
+                if (target.classList.contains('edit-btn')) {
+                    try {
+                        const response = await fetch(`${API_URL}/${id}`);
+                        if (!response.ok) {
+                            throw new Error('Producto no encontrado');
+                        }
+                        const product = await response.json();
+                        
+                        productIdInput.value = product.id;
+                        document.getElementById('nombre').value = product.nombre;
+                        document.getElementById('descripcion').value = product.descripcion;
+                        document.getElementById('precio').value = product.precio;
+                        document.getElementById('categoria').value = product.categoria;
+                        imagenUrlInput.value = product.imagenUrl;
+                        previewImg.src = product.imagenUrl;
+                        if (product.imagenUrl) {
+                            imagePreviewContainer.style.display = 'block';
+                        }
+                        formTitle.textContent = `Editar Producto #${product.id}`;
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    } catch (error) {
+                        showMessageModal(`Error al cargar producto para editar: ${error.message}`, true);
+                        console.error('Error loading product for edit:', error);
+                    }
+                } else if (target.classList.contains('delete-btn')) {
+                    try {
+                        const response = await fetch(`${API_URL}/eliminar/${id}`, { method: 'PATCH' });
+                           if (!response.ok) {
+                               throw new Error('No se pudo eliminar el producto');
+                           }
+                        showMessageModal('Producto eliminado lógicamente.');
+                        fetchProducts();
+                    } catch (error) {
+                        showMessageModal(`Error al eliminar: ${error.message}`, true);
+                        console.error('Error deleting product:', error);
+                    }
+                } else if (target.classList.contains('restore-btn')) {
+                    try {
+                          const response = await fetch(`${API_URL}/restaurar/${id}`, { method: 'PATCH' });
+                             if (!response.ok) {
+                                 throw new Error('No se pudo restaurar el producto');
+                             }
+                            showMessageModal('Producto restaurado con éxito.');
+                            fetchProducts();
+                    } catch (error) {
+                             showMessageModal(`Error al restaurar: ${error.message}`, true);
+                             console.error('Error restoring product:', error);
+                    }
+                }
+            });
+
+            // Muestra la vista previa de la imagen al cambiar el valor del input
+            imagenUrlInput.addEventListener('input', () => {
+                if (imagenUrlInput.value) {
+                    previewImg.src = imagenUrlInput.value;
+                    imagePreviewContainer.style.display = 'block';
+                } else {
+                    previewImg.src = '';
+                    imagePreviewContainer.style.display = 'none';
+                }
+            });
+
+            // Resetea el formulario al estado inicial
+            function resetForm() {
+                form.reset();
+                productIdInput.value = '';
+                formTitle.textContent = 'Agregar Nuevo Producto';
+                previewImg.src = ''; // Limpiamos la vista previa
+                imagePreviewContainer.style.display = 'none'; // Ocultamos el contenedor
+            }
+
+            // Eventos de los botones de la interfaz
+            cancelBtn.addEventListener('click', resetForm);
+            modalOkBtn.addEventListener('click', hideMessageModal);
+            messageModal.addEventListener('click', (e) => {
+                if (e.target.id === 'message-modal') {
+                    hideMessageModal();
+                }
+            });
+
+            // Eventos de los botones de filtro
+            showAvailableBtn.addEventListener('click', () => {
+                currentFilter = 'available';
+                fetchProducts();
+            });
+
+            showAllBtn.addEventListener('click', () => {
+                currentFilter = 'all';
+                fetchProducts();
+            });
+
+            showUnavailableBtn.addEventListener('click', () => {
+                currentFilter = 'unavailable';
+                fetchProducts();
+            });
+
+            // Carga los productos al iniciar la página
+            fetchProducts();
+        });
+    </script>
+</body>
+</html>
